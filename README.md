@@ -2,11 +2,6 @@
 
 <div align="center">
 
-![Java](https://img.shields.io/badge/Java-17-orange?style=for-the-badge&logo=java)
-![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.3.4-brightgreen?style=for-the-badge&logo=spring)
-![Groq](https://img.shields.io/badge/Groq-Llama%203.3%2070B-blue?style=for-the-badge)
-![License](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)
-
 **AI-Powered Resume Screening System with Semantic Matching**
 
 [Features](#features) • [Architecture](#architecture) • [LLM Prompts](#llm-integration) • [Installation](#installation) • [API](#api-documentation) • [Demo](#demo)
@@ -19,13 +14,6 @@
 
 **Smart Resume Screener** is an intelligent recruitment automation tool that combines PDF parsing with Large Language Model (LLM) technology to revolutionize the hiring process. It automatically extracts structured data from resumes and uses AI to provide objective, detailed candidate evaluations.
 
-## 🎥 Demo Video
-
-[![▶](https://img.youtube.com/vi/q63Etm78BQE/0.jpg)](https://youtu.be/q63Etm78BQE)
-
-**Click the image above OR the link below to watch the demo video:**
-
-[Watch Smart Resume Screener Demo on YouTube](https://youtu.be/q63Etm78BQE)
 
 ### Key Highlights
 
@@ -47,280 +35,9 @@
 
 ---
 
-## 🏗️ Architecture
-
-### Architecture Diagram - Mermaid Code
-
-```mermaid
-flowchart TB
-    subgraph Frontend["🖥️ PRESENTATION LAYER"]
-        Browser["Web Browser<br/>HTML5 + CSS3 + JavaScript"]
-    end
-    
-    subgraph Controller["🎮 CONTROLLER LAYER"]
-        RC["ResumeController<br/>@Controller"]
-        Upload["POST /api/upload"]
-        Match["POST /api/match"]
-        GetAll["GET /api/resumes"]
-        Delete["DELETE /api/resumes"]
-    end
-    
-    subgraph Service["⚙️ SERVICE LAYER"]
-        PDF["PDFParserService<br/>📄 Parse PDF"]
-        LLM["LLMMatchingService<br/>🤖 AI Matching"]
-    end
-    
-    subgraph External["☁️ EXTERNAL SERVICES"]
-        PDFBox["Apache PDFBox 3.0.3<br/>Text Extraction"]
-        Groq["Groq API<br/>Llama 3.3 70B"]
-    end
-    
-    subgraph Data["💾 DATA LAYER"]
-        Repo["ResumeRepository<br/>JPA Interface"]
-        DB["H2 Database<br/>In-Memory"]
-    end
-    
-    Browser -->|HTTP/JSON| RC
-    RC --> Upload
-    RC --> Match
-    RC --> GetAll
-    RC --> Delete
-    
-    Upload --> PDF
-    Match --> LLM
-    GetAll --> Repo
-    Delete --> Repo
-    
-    PDF --> PDFBox
-    PDF --> Repo
-    LLM --> Groq
-    LLM --> Repo
-    
-    Repo --> DB
-    
-    style Frontend fill:#e8f4f8
-    style Controller fill:#fff4e6
-    style Service fill:#e8f5e9
-    style External fill:#fce4ec
-    style Data fill:#f3e5f5
-```
-
-### Data Flow Diagram - Mermaid Code
-
-```mermaid
-sequenceDiagram
-    actor User
-    participant Browser
-    participant Controller as ResumeController
-    participant PDFService as PDFParserService
-    participant LLMService as LLMMatchingService
-    participant Repository as ResumeRepository
-    participant DB as H2 Database
-    participant Groq as Groq API
-
-    Note over User,Groq: RESUME UPLOAD FLOW
-    
-    User->>Browser: Upload PDF Resume
-    Browser->>Controller: POST /api/upload
-    Controller->>PDFService: parseResume(file)
-    PDFService->>PDFService: Extract text with PDFBox
-    PDFService->>PDFService: Parse name, email, phone
-    PDFService->>PDFService: Extract skills, experience
-    PDFService-->>Controller: Resume entity
-    Controller->>Repository: save(resume)
-    Repository->>DB: INSERT INTO resumes
-    DB-->>Repository: Resume with ID
-    Repository-->>Controller: Saved resume
-    Controller-->>Browser: JSON response
-    Browser-->>User: Success message
-
-    Note over User,Groq: AI MATCHING FLOW
-    
-    User->>Browser: Enter job description
-    Browser->>Controller: POST /api/match
-    Controller->>Repository: findAll()
-    Repository->>DB: SELECT * FROM resumes
-    DB-->>Repository: List of resumes
-    Repository-->>Controller: Resume list
-    
-    loop For each resume
-        Controller->>LLMService: matchResumeWithJob()
-        LLMService->>LLMService: Build prompt
-        LLMService->>Groq: Send prompt to Llama 3.3
-        Groq->>Groq: Semantic analysis
-        Groq-->>LLMService: Score + Justification
-        LLMService->>LLMService: Parse response
-        LLMService-->>Controller: MatchResult
-    end
-    
-    Controller->>Controller: Sort by score
-    Controller->>Controller: Filter by threshold
-    Controller-->>Browser: Ranked results
-    Browser-->>User: Display matches
-```
-
-### LLM Processing Flow - Mermaid Code
-
-```mermaid
-flowchart TD
-    Start([Start: Match Request]) --> Fetch[Fetch All Resumes from DB]
-    Fetch --> Loop{For Each Resume}
-    
-    Loop -->|Next Resume| Build[Build Structured Prompt]
-    
-    Build --> Prompt["Prompt Template:<br/>- Job Description<br/>- Candidate Skills<br/>- Experience<br/>- Education<br/>- Scoring Instructions"]
-    
-    Prompt --> Send[Send to Groq API]
-    Send --> Groq["Groq Cloud<br/>Llama 3.3 70B<br/>Temperature: 0.3"]
-    
-    Groq --> Response["AI Response:<br/>Score: 8.5<br/>Justification: ..."]
-    
-    Response --> Parse[Parse Response with Regex]
-    Parse --> Extract["Extract:<br/>- Match Score<br/>- Justification Text"]
-    
-    Extract --> Create[Create MatchResult Object]
-    Create --> Store[Add to Results List]
-    
-    Store --> Loop
-    Loop -->|All Done| Sort[Sort by Score DESC]
-    
-    Sort --> Filter[Filter by Threshold >= 6.0]
-    Filter --> Return[Return JSON Response]
-    Return --> End([End: Display Results])
-    
-    style Start fill:#4CAF50,color:#fff
-    style End fill:#4CAF50,color:#fff
-    style Groq fill:#2196F3,color:#fff
-    style Response fill:#FF9800,color:#fff
-    style Filter fill:#9C27B0,color:#fff
-```
-
-***
-
-
-## 🤖 LLM Integration
-
-### Prompt Engineering Strategy
-
-Our system uses a carefully engineered prompt template to ensure consistent, high-quality AI evaluations.
-
-### Complete Prompt Template
-
-private String buildMatchingPrompt(Resume resume, String jobDescription) {
-return """
-You are an expert technical recruiter. Analyze the candidate's
-resume against the job description and provide an objective assessment.
-
-
-    ══════════════════════════════════════════════════════════════
-    JOB DESCRIPTION:
-    ══════════════════════════════════════════════════════════════
-    %s
-    
-    ══════════════════════════════════════════════════════════════
-    CANDIDATE RESUME:
-    ══════════════════════════════════════════════════════════════
-    Name: %s
-    Email: %s
-    Phone: %s
-    Skills: %s
-    Experience: %s
-    Education: %s
-    
-    ══════════════════════════════════════════════════════════════
-    EVALUATION CRITERIA:
-    ══════════════════════════════════════════════════════════════
-    
-    1. TECHNICAL SKILLS (40%%)
-       - Required technologies and frameworks match
-       - Skill level and depth of expertise
-       - Critical gaps identification
-    
-    2. EXPERIENCE (30%%)
-       - Years of relevant experience
-       - Similar project work
-       - Domain knowledge alignment
-    
-    3. EDUCATION (20%%)
-       - Educational background match
-       - Relevant degrees and certifications
-    
-    4. OVERALL FIT (10%%)
-       - Career progression
-       - Special achievements
-       - Growth potential
-    
-    ══════════════════════════════════════════════════════════════
-    SCORING SCALE:
-    ══════════════════════════════════════════════════════════════
-    
-    9-10: Exceptional fit - Highly recommended
-    7-8:  Strong fit - Recommended for interview
-    5-6:  Moderate fit - Consider with reservations
-    3-4:  Weak fit - Missing key requirements
-    1-2:  Poor fit - Not recommended
-    
-    ══════════════════════════════════════════════════════════════
-    RESPONSE FORMAT (MUST FOLLOW):
-    ══════════════════════════════════════════════════════════════
-    
-    Score: [number 1-10]
-    
-    Justification: [3-4 sentences explaining the score, highlighting 
-    strengths, identifying gaps, and providing specific reasoning]
-    
-    """.formatted(jobDescription, 
-                 resume.getCandidateName(),
-                 resume.getEmail(),
-                 resume.getPhone(),
-                 resume.getSkills(),
-                 resume.getExperience(),
-                 resume.getEducation());
-}
-
-
-### LLM Configuration
-
-Groq API Configuration
-spring.ai.openai.api-key=gsk_YOUR_GROQ_API_KEY
-spring.ai.openai.base-url=https://api.groq.com/openai
-spring.ai.openai.chat.options.model=llama-3.3-70b-versatile
-spring.ai.openai.chat.options.temperature=0.3
-spring.ai.openai.chat.options.max-tokens=1000
 
 
 
-### Why This Works
-
-| Aspect | Implementation | Benefit |
-|--------|---------------|---------|
-| **Role Definition** | "Expert technical recruiter" | Primes model for recruitment context |
-| **Structured Input** | Organized sections with separators | Improves parsing and comprehension |
-| **Weighted Criteria** | 40% skills, 30% experience, etc. | Ensures balanced evaluation |
-| **Scoring Anchors** | Descriptive scale (9-10 = Exceptional) | Prevents score inflation |
-| **Format Enforcement** | "Score: X\nJustification: Y" | Enables reliable regex parsing |
-| **Low Temperature** | 0.3 for consistency | Reduces randomness across candidates |
-
-### Example Response
-
-**Input:**
-Job: "Senior Java Developer, 5+ years Spring Boot"
-Candidate: "7 years Java, Spring Boot, Microservices, AWS"
-
-
-
-**AI Output:**
-Score: 8.5
-
-Justification: The candidate demonstrates exceptional alignment with
-7 years of Java experience exceeding the 5+ year requirement, plus
-hands-on Spring Boot and microservices expertise matching core needs.
-AWS cloud experience adds significant value for modern deployments.
-Strong recommendation for technical interview to verify project depth.
-
-
-
----
 
 ## 🛠️ Technology Stack
 
@@ -347,20 +64,6 @@ Strong recommendation for technical interview to verify project depth.
 - ☕ Java 17+ ([Download](https://www.oracle.com/java/technologies/downloads/))
 - 📦 Maven 3.6+ ([Download](https://maven.apache.org/download.cgi))
 - 🔑 Groq API Key ([Free Signup](https://console.groq.com))
-
-### Quick Start
-
-1. Clone repository
-git clone https://github.com/YOUR_USERNAME/smart-resume-screener.git
-cd smart-resume-screener
-
-2. Configure API key in src/main/resources/application.properties
-Replace: spring.ai.openai.api-key=gsk_YOUR_KEY
-3. Build and run
-mvn clean install
-mvn spring-boot:run
-
-4. Access at http://localhost:8080
 
 
 ### Detailed Setup
@@ -408,144 +111,6 @@ curl -X POST http://localhost:8080/api/upload
 
 
 
-**Response:**
-{
-"success": true,
-"resumeId": 1,
-"candidateName": "Sukesh",
-"data": {
-"id": 1,
-"candidateName": "Sukesh",
-"email": "Sukesh@gmail.com",
-"phone": "+91-8121865233",
-"skills": "Java, Spring Boot, MySQL, REST APIs",
-"experience": "3 years as Java Developer at TechCorp",
-"education": "B.Tech Computer Science, VIT"
-}
-}
-
-
-### Example: Match Resumes
-
-**Request:**
-curl -X POST http://localhost:8080/api/match
--H "Content-Type: application/json"
--d '{
-"jobDescription": "Senior Java Developer with 5+ years experience in Spring Boot, microservices, and cloud technologies. Must have strong knowledge of REST APIs, MySQL, Docker, and AWS.",
-"threshold": 6.0
-}'
-
-
-
-**Response:**
-{
-"success": true,
-"totalCandidates": 5,
-"shortlistedCount": 3,
-"results": [
-{
-"resumeId": 1,
-"candidateName": "Sukesh",
-"matchScore": 8.5,
-"justification": "Strong match for the Senior Java Developer position. The candidate has 3 years of hands-on experience with Java and Spring Boot, which aligns well with the technical requirements. Skills in REST APIs and MySQL demonstrate full-stack capabilities. However, the candidate has only 3 years of experience while the job requires 5+, and there's no mention of cloud technologies like AWS or Docker. Overall, a solid candidate who could grow into the role with some upskilling in cloud platforms.",
-"skills": "Java, Spring Boot, MySQL, REST APIs",
-"experience": "3 years as Java Developer at TechCorp",
-"education": "B.Tech Computer Science, NIT",
-"email": "Sukesh@gmail.com",
-"phone": "+91-8121865233"
-},
-{
-"resumeId": 2,
-"candidateName": "Priya Sharma",
-"matchScore": 7.0,
-"justification": "Good match with some gaps. The candidate has 2 years of experience with Java and Spring Framework. Strong educational background. Missing cloud experience and microservices knowledge. Would be suitable for a mid-level position.",
-"skills": "Java, Spring Framework, MySQL",
-"experience": "2 years as Backend Developer",
-"education": "B.E. Computer Science, Mumbai University",
-"email": "priya.sharma@gmail.com",
-"phone": "+91-9988776655"
-},
-{
-"resumeId": 3,
-"candidateName": "Amit Kumar",
-"matchScore": 6.5,
-"justification": "Moderate match. Fresh graduate with strong academic foundation. Knowledge of Core Java and Spring Boot through internship and projects. Limited professional experience but high potential for growth.",
-"skills": "Core Java, Spring Boot, MySQL, Git",
-"experience": "6 months internship at ABC Tech",
-"education": "B.Tech Computer Science, IIT Delhi",
-"email": "amit.kumar@example.com",
-"phone": "+91-9123456789"
-}
-]
-}
-
-
-
-### Example: Get All Resumes
-
-**Request:**
-curl -X GET http://localhost:8080/api/resumes
-
-
-
-**Response:**
-[
-{
-"id": 1,
-"candidateName": "Sukesh",
-"email": "Sukesh@gmail.com",
-"phone": "+91-8121865233",
-"skills": "Java, Spring Boot, MySQL",
-"experience": "3 years as Java Developer",
-"education": "B.Tech Computer Science",
-"uploadedAt": "2025-10-13T13:45:30"
-},
-{
-"id": 2,
-"candidateName": "Priya Sharma",
-"email": "priya.sharma@gmail.com",
-"phone": "+91-9988776655",
-"skills": "Java, Spring Framework, MySQL",
-"experience": "2 years as Backend Developer",
-"education": "B.E. Computer Science",
-"uploadedAt": "2025-10-13T14:10:15"
-}
-]
-
-
-
-### Example: Delete Resume
-
-**Request:**
-curl -X DELETE http://localhost:8080/api/resumes/1
-
-
-
-**Response:**
-{
-"success": true,
-"message": "Resume deleted successfully"
-}
-
-
-
-### Example: Delete All Resumes
-
-**Request:**
-curl -X DELETE http://localhost:8080/api/resumes
-
-
-
-**Response:**
-{
-"success": true,
-"message": "All resumes deleted successfully"
-}
-
-
-undefined
-
-
 ---
 
 ## 📁 Project Structure
@@ -590,19 +155,7 @@ smart-resume-screener/
 
 ---
 
-## 🎬 Demo
 
-### Screenshots
-
-**Landing Page:**
-![Landing Page](pics/1.jpeg)
-
-**Upload Interface and AI Results:**
-![Upload Interface](pics/3.jpeg)
-
-
-
----
 
 ## 🔐 Security
 
@@ -626,9 +179,9 @@ smart-resume-screener/
 
 ## 👨‍💻 Author
 
-**Kora Sai Sukesh**
-- GitHub: [@Sukesh1104](https://github.com/Sukesh1104)
-- Email: saisukesh.kora@gmail.com
+**Apurva Anand**
+- GitHub: [@APURV960](https://github.com/APURV960)
+- Email: apurva.anand789@gmail.com
 
 ---
 
@@ -642,8 +195,6 @@ smart-resume-screener/
 
 
 <div align="center">
-
-**⭐ Star this repo if you find it useful! ⭐**
 
 
 </div>
